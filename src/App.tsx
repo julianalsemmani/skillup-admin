@@ -4,13 +4,15 @@ import { ExerciseDetailForm } from './components/ExerciseDetailForm';
 import { ClubGroupSelect } from './components/ClubGroupSelect';
 import { SessionList } from './components/SessionList';
 import { AuthForm } from './components/AuthForm';
+import { ClubSetup } from './components/ClubSetup';
 import { Exercise, ExerciseDetail, Session, User, UserSession } from './types';
-import { pb, isUserValid, getCurrentUser, logout } from './lib/pb';
+import { pb, isUserValid, getCurrentUser, logout, getUserClub } from './lib/pb';
 import { format } from 'date-fns';
 import { Dumbbell, Plus, Save, X, LogOut } from 'lucide-react';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(isUserValid());
+  const [hasClub, setHasClub] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -34,6 +36,7 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      checkClub();
       fetchSessions();
     }
   }, [isAuthenticated]);
@@ -45,11 +48,16 @@ function App() {
     });
   }, []);
 
+  const checkClub = async () => {
+    const club = await getUserClub();
+    setHasClub(!!club);
+  };
+
   const fetchSessions = async () => {
     try {
       const records = await pb.collection('sessions').getList(1, 50, {
         sort: '-created',
-        expand: 'exercises',
+        expand: 'exercises,user_sessions(session)',
       });
       setSessions(records.items as Session[]);
     } catch (error) {
@@ -274,6 +282,10 @@ function App() {
 
   if (!isAuthenticated) {
     return <AuthForm onSuccess={() => setIsAuthenticated(true)} />;
+  }
+
+  if (!hasClub) {
+    return <ClubSetup onComplete={() => setHasClub(true)} />;
   }
 
   return (

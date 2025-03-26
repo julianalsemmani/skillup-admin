@@ -7,6 +7,8 @@ export type AuthModel = {
   email: string;
   firstName?: string;
   lastName?: string;
+  birthDate?: string;
+  clubs?: string;
 };
 
 export const isUserValid = () => {
@@ -21,13 +23,66 @@ export const login = async (email: string, password: string) => {
   return await pb.collection('users').authWithPassword(email, password);
 };
 
-export const register = async (email: string, password: string, passwordConfirm: string) => {
+export const register = async (data: {
+  email: string;
+  password: string;
+  passwordConfirm: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
+}) => {
   return await pb.collection('users').create({
-    email,
-    password,
-    passwordConfirm,
+    ...data,
     emailVisibility: true,
   });
+};
+
+export const createClub = async (name: string) => {
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const club = await pb.collection('clubs').create({
+    name,
+    admin: [user.id],
+  });
+
+  // Update user's club reference
+  await pb.collection('users').update(user.id, {
+    clubs: club.id,
+  });
+
+  return club;
+};
+
+export const createGroup = async (name: string, clubId: string) => {
+  return await pb.collection('groups').create({
+    name,
+    club: clubId,
+    members: [],
+    invitationCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+  });
+};
+
+export const getUserClub = async () => {
+  const user = getCurrentUser();
+  if (!user) return null;
+
+  try {
+    const record = await pb.collection('users').getOne(user.id, {
+      expand: 'clubs',
+    });
+    return record.expand?.clubs;
+  } catch {
+    return null;
+  }
+};
+
+export const getClubGroups = async (clubId: string) => {
+  const records = await pb.collection('groups').getList(1, 50, {
+    filter: `club = "${clubId}"`,
+    expand: 'members',
+  });
+  return records.items;
 };
 
 export const logout = () => {

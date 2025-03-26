@@ -48,6 +48,9 @@ export interface Group {
   club: string;
   members: string[];
   invitationCode: string;
+  expand?: {
+    members?: User[];
+  };
 }
 
 export interface User {
@@ -55,6 +58,8 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  birthDate?: string;
+  clubs?: string;
 }
 
 export interface UserSession {
@@ -64,4 +69,13 @@ export interface UserSession {
   completed: boolean;
   completed_at?: string;
   manualVerification: boolean;
+}
+
+export interface UserExerciseProgress {
+  id?: string;
+  user: string;
+  exercise_detail: string;
+  session: string;
+  completed: boolean;
+  completed_at?: string;
 }
