@@ -3,12 +3,14 @@ import { ExerciseSearch } from './components/ExerciseSearch';
 import { ExerciseDetailForm } from './components/ExerciseDetailForm';
 import { ClubGroupSelect } from './components/ClubGroupSelect';
 import { SessionList } from './components/SessionList';
+import { AuthForm } from './components/AuthForm';
 import { Exercise, ExerciseDetail, Session, User, UserSession } from './types';
-import { pb } from './lib/pb';
+import { pb, isUserValid, getCurrentUser, logout } from './lib/pb';
 import { format } from 'date-fns';
-import { Dumbbell, Plus, Save, X } from 'lucide-react';
+import { Dumbbell, Plus, Save, X, LogOut } from 'lucide-react';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(isUserValid());
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -31,7 +33,16 @@ function App() {
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
 
   useEffect(() => {
-    fetchSessions();
+    if (isAuthenticated) {
+      fetchSessions();
+    }
+  }, [isAuthenticated]);
+
+  // Subscribe to auth state changes
+  useEffect(() => {
+    pb.authStore.onChange(() => {
+      setIsAuthenticated(isUserValid());
+    });
   }, []);
 
   const fetchSessions = async () => {
@@ -209,6 +220,7 @@ function App() {
         const createdSession = await pb.collection('sessions').create({
           ...session,
           exercises: [],
+          user: getCurrentUser()?.id,
         });
         sessionId = createdSession.id;
       }
@@ -254,6 +266,16 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    setSessions([]);
+    resetForm();
+  };
+
+  if (!isAuthenticated) {
+    return <AuthForm onSuccess={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -263,15 +285,25 @@ function App() {
             <h1 className="text-3xl font-bold text-gray-900">Training Sessions</h1>
           </div>
           
-          {!showForm && (
+          <div className="flex items-center gap-4">
+            {!showForm && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={20} />
+                Create Session
+              </button>
+            )}
+            
             <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800"
             >
-              <Plus size={20} />
-              Create Session
+              <LogOut size={20} />
+              Logout
             </button>
-          )}
+          </div>
         </div>
 
         {showForm ? (
