@@ -19,7 +19,7 @@ export function ExerciseSearch({ onSelect }: Props) {
       setLoading(true);
       try {
         const records = await pb.collection('exercises').getList(1, 500, {
-          filter: `name ~ "${search}" || nameNO ~ "${search} || equipment = "${search}"`,
+          filter: `name ~ "${search}" || nameNO ~ "${search} || equipment ~ "${search}"`,
           sort: 'name',
         });
         setExercises(records.items as Exercise[]);
