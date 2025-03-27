@@ -57,22 +57,23 @@ function App() {
     try {
       const currentUser = getCurrentUser();
       if (!currentUser) return;
-  
+      // Get groups where user is a member
       const groups = await pb.collection('groups').getList(1, 50, {
         filter: `members.id ~ "${currentUser.id}"`,
       });
   
-      const groupIds = groups.items.map((g) => g.id);
+      const groupIds = groups.items.map(g => g.id);
       if (groupIds.length === 0) {
         setSessions([]);
         return;
       }
   
-      const groupFilter = groupIds.map((id) => `group="${id}"`).join(' || ');
+      const filter = groupIds.map(id => `group="${id}"`).join(' || ');
+  
       const records = await pb.collection('sessions').getList(1, 50, {
         sort: '-created',
-        filter: groupFilter,
-        expand: 'exercises,user_sessions(session)',
+        filter,
+        expand: 'group,exercises,user_sessions(session)',
       });
   
       setSessions(records.items as Session[]);
@@ -80,6 +81,7 @@ function App() {
       console.error('Error fetching sessions:', error);
     }
   };
+  
   
 
   const handleAddExercise = (exercise: Exercise) => {
