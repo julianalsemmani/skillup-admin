@@ -55,15 +55,32 @@ function App() {
 
   const fetchSessions = async () => {
     try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return;
+  
+      const groups = await pb.collection('groups').getList(1, 50, {
+        filter: `members.id ~ "${currentUser.id}"`,
+      });
+  
+      const groupIds = groups.items.map((g) => g.id);
+      if (groupIds.length === 0) {
+        setSessions([]);
+        return;
+      }
+  
+      const groupFilter = groupIds.map((id) => `group="${id}"`).join(' || ');
       const records = await pb.collection('sessions').getList(1, 50, {
         sort: '-created',
+        filter: groupFilter,
         expand: 'exercises,user_sessions(session)',
       });
+  
       setSessions(records.items as Session[]);
     } catch (error) {
       console.error('Error fetching sessions:', error);
     }
   };
+  
 
   const handleAddExercise = (exercise: Exercise) => {
     setExerciseDetails([
