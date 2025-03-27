@@ -63,6 +63,26 @@ export const createGroup = async (name: string, clubId: string) => {
   });
 };
 
+export const deleteGroup = async (groupId: string) => {
+  return await pb.collection('groups').delete(groupId);
+};
+
+export const addMembersToGroup = async (groupId: string, memberIds: string[]) => {
+  const group = await pb.collection('groups').getOne(groupId);
+  const updatedMembers = [...new Set([...(group.members || []), ...memberIds])];
+  return await pb.collection('groups').update(groupId, {
+    members: updatedMembers,
+  });
+};
+
+export const removeMemberFromGroup = async (groupId: string, memberId: string) => {
+  const group = await pb.collection('groups').getOne(groupId);
+  const updatedMembers = (group.members || []).filter(id => id !== memberId);
+  return await pb.collection('groups').update(groupId, {
+    members: updatedMembers,
+  });
+};
+
 export const getUserClub = async () => {
   const user = getCurrentUser();
   if (!user) return null;
@@ -81,6 +101,15 @@ export const getClubGroups = async (clubId: string) => {
   const records = await pb.collection('groups').getList(1, 50, {
     filter: `club = "${clubId}"`,
     expand: 'members',
+  });
+  return records.items;
+};
+
+export const getGroupSessions = async (groupId: string) => {
+  const records = await pb.collection('sessions').getList(1, 50, {
+    filter: `group = "${groupId}"`,
+    expand: 'exercises,user_sessions(session)',
+    sort: '-created',
   });
   return records.items;
 };
