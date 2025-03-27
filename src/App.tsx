@@ -59,7 +59,7 @@ function App() {
       if (!currentUser) return;
       // Get groups where user is a member
       const groups = await pb.collection('groups').getList(1, 50, {
-        filter: `members.id ~ "${currentUser.id}"`,
+        filter: `members ~ "${currentUser.id}"`,
       });
   
       const groupIds = groups.items.map(g => g.id);
@@ -209,6 +209,7 @@ function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    pb.autoCancellation(false);
     
     try {
       let sessionId: string;
