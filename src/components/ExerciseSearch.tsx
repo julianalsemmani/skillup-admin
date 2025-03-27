@@ -18,8 +18,8 @@ export function ExerciseSearch({ onSelect }: Props) {
     const fetchExercises = async () => {
       setLoading(true);
       try {
-        const records = await pb.collection('exercises').getList(1, 500, {
-          filter: `name ~ "${search}" || nameNO ~ "${search} || equipment ~ "${search}"`,
+        const records = await pb.collection('exercises').getList(1, 100, {
+          filter: `name ~ "${search}" || nameNO ~ "${search}" || equipment ~ "${search}"`,
           sort: 'name',
         });
         setExercises(records.items as Exercise[]);
